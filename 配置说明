@@ -1,0 +1,282 @@
+配置说明
+转至元数据结
+单分组数据库分片配置
+以bill为例，有两个分片数据库newsee-bill和newsee-bill-11，对应的数据源名称为bill10master和bill11master，作为实际数据源；
+
+读写分离的数据源是虚拟数据源，聚合了某个主库和某个（些）从库。应用层用到的数据源是读写分离中配置的虚拟数据源。这个示例中有两个虚拟数据源bill10和bill11；未作读写分离，所以从库数据源列表也指向了主库；
+
+水平范围设置中，可以配置分片范围（租户Id、项目Id范围）。这个示例以项目Id的起始范围（precinctIdStart和precinctIdEnd）作为分片依据。precinctId可以在owner库owner_house_base_info表中查找类型为2的记录。
+
+
+
+# ===================================================================
+# 数据源配置
+# 数据源按照“模块名+分片序号+[master|slave]”来命名
+# ===================================================================
+# 所有的数据源名称列表。与数据源具体配置中的名称对应，不能遗漏，否则会路由不到对应的分片库
+spring.shardingsphere.datasource.names=bill10master,bill11master
+# 数据源具体配置，类型都为DruidDataSource
+spring.shardingsphere.datasource.bill10master.type=com.alibaba.druid.pool.DruidDataSource
+spring.shardingsphere.datasource.bill10master.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.shardingsphere.datasource.bill10master.url=jdbc:mysql://192.168.1.98:3306/newsee-bill?characterEncoding=utf-8&useSSL=false&nullCatalogMeansCurrent=true
+spring.shardingsphere.datasource.bill10master.username=root
+spring.shardingsphere.datasource.bill10master.password=Newsee888
+spring.shardingsphere.datasource.bill10master.filters=stat,wall,slf4j
+spring.shardingsphere.datasource.bill10master.initialSize=1
+spring.shardingsphere.datasource.bill10master.minIdle=1
+spring.shardingsphere.datasource.bill10master.maxWait=60000
+spring.shardingsphere.datasource.bill10master.maxActive=20
+spring.shardingsphere.datasource.bill10master.timeBetweenEvictionRunsMillis=60000
+spring.shardingsphere.datasource.bill10master.minEvictableIdleTimeMillis=300000
+spring.shardingsphere.datasource.bill10master.validationQuery=select 'x'
+spring.shardingsphere.datasource.bill10master.testWhileIdle=true
+spring.shardingsphere.datasource.bill10master.testOnBorrow=false
+spring.shardingsphere.datasource.bill10master.testOnReturn=false
+spring.shardingsphere.datasource.bill10master.poolPreparedStatements=true
+spring.shardingsphere.datasource.bill10master.maxOpenPreparedStatements=20
+
+spring.shardingsphere.datasource.bill11master.type=com.alibaba.druid.pool.DruidDataSource
+spring.shardingsphere.datasource.bill11master.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.shardingsphere.datasource.bill11master.url=jdbc:mysql://192.168.1.98:3306/newsee-bill-11?characterEncoding=utf-8&useSSL=false&nullCatalogMeansCurrent=true
+spring.shardingsphere.datasource.bill11master.username=root
+spring.shardingsphere.datasource.bill11master.password=Newsee888
+spring.shardingsphere.datasource.bill11master.filters=stat,wall,slf4j
+spring.shardingsphere.datasource.bill11master.initialSize=1
+spring.shardingsphere.datasource.bill11master.minIdle=1
+spring.shardingsphere.datasource.bill11master.maxWait=60000
+spring.shardingsphere.datasource.bill11master.maxActive=20
+spring.shardingsphere.datasource.bill11master.timeBetweenEvictionRunsMillis=60000
+spring.shardingsphere.datasource.bill11master.minEvictableIdleTimeMillis=300000
+spring.shardingsphere.datasource.bill11master.validationQuery=select 'x'
+spring.shardingsphere.datasource.bill11master.testWhileIdle=true
+spring.shardingsphere.datasource.bill11master.testOnBorrow=false
+spring.shardingsphere.datasource.bill11master.testOnReturn=false
+spring.shardingsphere.datasource.bill11master.poolPreparedStatements=true
+spring.shardingsphere.datasource.bill11master.maxOpenPreparedStatements=20
+
+# 读写分离
+spring.shardingsphere.sharding.master-slave-rules.bill10.master-data-source-name=bill10master
+spring.shardingsphere.sharding.master-slave-rules.bill10.slave-data-source-names[0]=bill10master
+spring.shardingsphere.sharding.master-slave-rules.bill11.master-data-source-name=bill11master
+spring.shardingsphere.sharding.master-slave-rules.bill11.slave-data-source-names[0]=bill11master
+
+# 水平分库策略配置
+spring.shardingsphere.sharding.default-database-strategy.hint.algorithm-class-name=com.newsee.database.sharding.NSDbHintShardingAlgorithm
+spring.shardingsphere.sharding.default-table-strategy.hint.algorithm-class-name=com.newsee.database.sharding.NSDbHintShardingAlgorithm
+
+# 广播表，每个节点复制一份，适用于配置类的数据
+spring.shardingsphere.sharding.broadcast-tables=ns_bill_accounting_subjects,ns_bill_billbookserailrule,ns_bill_long_text,ns_bill_map,ns_bill_shbwsetting_info,ns_bill_voucher_batch_relationship,ns_bill_voucher_detail,ns_bill_voucher_detail_assist,ns_bill_voucher_detail_assist_detail,ns_bill_voucher_main_receipt_detail,ns_bill_voucher_sending_log,ns_bill_factory_information,ns_bill_pay_information,ns_pay_info
+# spring.shardingsphere.sharding.tables.ns_bill_accounting_subjects.key-generator.column=Id
+# spring.shardingsphere.sharding.tables.ns_bill_accounting_subjects.key-generator.type=SNOWFLAKE53
+# spring.shardingsphere.sharding.tables.ns_bill_billbookserailrule.key-generator.column=Id
+# spring.shardingsphere.sharding.tables.ns_bill_billbookserailrule.key-generator.type=SNOWFLAKE53
+# spring.shardingsphere.sharding.tables.ns_bill_long_text.key-generator.column=Id
+# spring.shardingsphere.sharding.tables.ns_bill_long_text.key-generator.type=SNOWFLAKE53
+# spring.shardingsphere.sharding.tables.ns_bill_map.key-generator.column=Id
+# spring.shardingsphere.sharding.tables.ns_bill_map.key-generator.type=SNOWFLAKE53
+# spring.shardingsphere.sharding.tables.ns_bill_shbwsetting_info.key-generator.column=Id
+# spring.shardingsphere.sharding.tables.ns_bill_shbwsetting_info.key-generator.type=SNOWFLAKE53
+# spring.shardingsphere.sharding.tables.ns_bill_voucher_batch_relationship.key-generator.column=Id
+# spring.shardingsphere.sharding.tables.ns_bill_voucher_batch_relationship.key-generator.type=SNOWFLAKE53
+# spring.shardingsphere.sharding.tables.ns_bill_voucher_detail.key-generator.column=Id
+# spring.shardingsphere.sharding.tables.ns_bill_voucher_detail.key-generator.type=SNOWFLAKE53
+# spring.shardingsphere.sharding.tables.ns_bill_voucher_detail_assist.key-generator.column=Id
+# spring.shardingsphere.sharding.tables.ns_bill_voucher_detail_assist.key-generator.type=SNOWFLAKE53
+# spring.shardingsphere.sharding.tables.ns_bill_voucher_detail_assist_detail.key-generator.column=Id
+# spring.shardingsphere.sharding.tables.ns_bill_voucher_detail_assist_detail.key-generator.type=SNOWFLAKE53
+# spring.shardingsphere.sharding.tables.ns_bill_voucher_main_receipt_detail.key-generator.column=Id
+# spring.shardingsphere.sharding.tables.ns_bill_voucher_main_receipt_detail.key-generator.type=SNOWFLAKE53
+# spring.shardingsphere.sharding.tables.ns_bill_voucher_sending_log.key-generator.column=Id
+# spring.shardingsphere.sharding.tables.ns_bill_voucher_sending_log.key-generator.type=SNOWFLAKE53
+# spring.shardingsphere.sharding.tables.ns_bill_factory_information.key-generator.column=Id
+# spring.shardingsphere.sharding.tables.ns_bill_factory_information.key-generator.type=SNOWFLAKE53
+# spring.shardingsphere.sharding.tables.ns_bill_pay_information.key-generator.column=Id
+# spring.shardingsphere.sharding.tables.ns_bill_pay_information.key-generator.type=SNOWFLAKE53
+# spring.shardingsphere.sharding.tables.ns_pay_info.key-generator.column=Id
+# spring.shardingsphere.sharding.tables.ns_pay_info.key-generator.type=SNOWFLAKE53
+
+# 水平分库范围设置
+newsee.sharding.shardConfigs[0].rangeNum=10
+newsee.sharding.shardConfigs[0].enterpriseIds=974
+newsee.sharding.shardConfigs[0].precinctIdStart=1
+newsee.sharding.shardConfigs[0].precinctIdEnd=401861
+newsee.sharding.shardConfigs[0].datasourceName=bill10
+newsee.sharding.shardConfigs[1].rangeNum=11
+newsee.sharding.shardConfigs[1].enterpriseIds=974
+newsee.sharding.shardConfigs[1].precinctIdStart=401886
+newsee.sharding.shardConfigs[1].precinctIdEnd=500000
+newsee.sharding.shardConfigs[1].datasourceName=bill11
+
+# 显示实际SQL和在哪个分片库执行
+spring.shardingsphere.props.sql.show=true
+
+
+多分组数据库分片配置
+以newsee-report为例的多分组数据库分片配置
+
+# ===================================================================
+# 数据源配置
+# 数据源按照“模块名+分片序号+[master|slave]”来命名
+# ===================================================================
+# 所有的数据源名称列表。与数据源具体配置中的名称对应，不能遗漏，否则会路由不到对应的分片库
+spring.shardingsphere.datasource.names=charge10master,charge11master,bill10master,bill11master,owner10master
+# 数据源具体配置，类型都为DruidDataSource - owner分组
+spring.shardingsphere.datasource.owner10master.type=com.alibaba.druid.pool.DruidDataSource
+spring.shardingsphere.datasource.owner10master.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.shardingsphere.datasource.owner10master.url=jdbc:mysql://192.168.1.98:3306/newsee-owner?characterEncoding=utf-8&useSSL=false&nullCatalogMeansCurrent=true
+spring.shardingsphere.datasource.owner10master.username=root
+spring.shardingsphere.datasource.owner10master.password=Newsee888
+spring.shardingsphere.datasource.owner10master.filters=stat,wall,slf4j
+spring.shardingsphere.datasource.owner10master.initialSize=1
+spring.shardingsphere.datasource.owner10master.minIdle=1
+spring.shardingsphere.datasource.owner10master.maxWait=60000
+spring.shardingsphere.datasource.owner10master.maxActive=20
+spring.shardingsphere.datasource.owner10master.timeBetweenEvictionRunsMillis=60000
+spring.shardingsphere.datasource.owner10master.minEvictableIdleTimeMillis=300000
+spring.shardingsphere.datasource.owner10master.validationQuery=select 'x'
+spring.shardingsphere.datasource.owner10master.testWhileIdle=true
+spring.shardingsphere.datasource.owner10master.testOnBorrow=false
+spring.shardingsphere.datasource.owner10master.testOnReturn=false
+spring.shardingsphere.datasource.owner10master.poolPreparedStatements=true
+spring.shardingsphere.datasource.owner10master.maxOpenPreparedStatements=20
+
+# 数据源具体配置，类型都为DruidDataSource - charge分组
+spring.shardingsphere.datasource.charge10master.type=com.alibaba.druid.pool.DruidDataSource
+spring.shardingsphere.datasource.charge10master.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.shardingsphere.datasource.charge10master.url=jdbc:mysql://192.168.1.98:3306/newsee-charge?characterEncoding=utf-8&useSSL=false&nullCatalogMeansCurrent=true
+spring.shardingsphere.datasource.charge10master.username=root
+spring.shardingsphere.datasource.charge10master.password=Newsee888
+spring.shardingsphere.datasource.charge10master.filters=stat,wall,slf4j
+spring.shardingsphere.datasource.charge10master.initialSize=1
+spring.shardingsphere.datasource.charge10master.minIdle=1
+spring.shardingsphere.datasource.charge10master.maxWait=60000
+spring.shardingsphere.datasource.charge10master.maxActive=20
+spring.shardingsphere.datasource.charge10master.timeBetweenEvictionRunsMillis=60000
+spring.shardingsphere.datasource.charge10master.minEvictableIdleTimeMillis=300000
+spring.shardingsphere.datasource.charge10master.validationQuery=select 'x'
+spring.shardingsphere.datasource.charge10master.testWhileIdle=true
+spring.shardingsphere.datasource.charge10master.testOnBorrow=false
+spring.shardingsphere.datasource.charge10master.testOnReturn=false
+spring.shardingsphere.datasource.charge10master.poolPreparedStatements=true
+spring.shardingsphere.datasource.charge10master.maxOpenPreparedStatements=20
+
+spring.shardingsphere.datasource.charge11master.type=com.alibaba.druid.pool.DruidDataSource
+spring.shardingsphere.datasource.charge11master.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.shardingsphere.datasource.charge11master.url=jdbc:mysql://192.168.1.98:3306/newsee-charge-11?characterEncoding=utf-8&useSSL=false&nullCatalogMeansCurrent=true
+spring.shardingsphere.datasource.charge11master.username=root
+spring.shardingsphere.datasource.charge11master.password=Newsee888
+spring.shardingsphere.datasource.charge11master.filters=stat,wall,slf4j
+spring.shardingsphere.datasource.charge11master.initialSize=1
+spring.shardingsphere.datasource.charge11master.minIdle=1
+spring.shardingsphere.datasource.charge11master.maxWait=60000
+spring.shardingsphere.datasource.charge11master.maxActive=20
+spring.shardingsphere.datasource.charge11master.timeBetweenEvictionRunsMillis=60000
+spring.shardingsphere.datasource.charge11master.minEvictableIdleTimeMillis=300000
+spring.shardingsphere.datasource.charge11master.validationQuery=select 'x'
+spring.shardingsphere.datasource.charge11master.testWhileIdle=true
+spring.shardingsphere.datasource.charge11master.testOnBorrow=false
+spring.shardingsphere.datasource.charge11master.testOnReturn=false
+spring.shardingsphere.datasource.charge11master.poolPreparedStatements=true
+spring.shardingsphere.datasource.charge11master.maxOpenPreparedStatements=20
+
+# 数据源具体配置，类型都为DruidDataSource - bill分组
+spring.shardingsphere.datasource.bill10master.type=com.alibaba.druid.pool.DruidDataSource
+spring.shardingsphere.datasource.bill10master.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.shardingsphere.datasource.bill10master.url=jdbc:mysql://192.168.1.98:3306/newsee-bill?characterEncoding=utf-8&useSSL=false&nullCatalogMeansCurrent=true
+spring.shardingsphere.datasource.bill10master.username=root
+spring.shardingsphere.datasource.bill10master.password=Newsee888
+spring.shardingsphere.datasource.bill10master.filters=stat,wall,slf4j
+spring.shardingsphere.datasource.bill10master.initialSize=1
+spring.shardingsphere.datasource.bill10master.minIdle=1
+spring.shardingsphere.datasource.bill10master.maxWait=60000
+spring.shardingsphere.datasource.bill10master.maxActive=20
+spring.shardingsphere.datasource.bill10master.timeBetweenEvictionRunsMillis=60000
+spring.shardingsphere.datasource.bill10master.minEvictableIdleTimeMillis=300000
+spring.shardingsphere.datasource.bill10master.validationQuery=select 'x'
+spring.shardingsphere.datasource.bill10master.testWhileIdle=true
+spring.shardingsphere.datasource.bill10master.testOnBorrow=false
+spring.shardingsphere.datasource.bill10master.testOnReturn=false
+spring.shardingsphere.datasource.bill10master.poolPreparedStatements=true
+spring.shardingsphere.datasource.bill10master.maxOpenPreparedStatements=20
+
+spring.shardingsphere.datasource.bill11master.type=com.alibaba.druid.pool.DruidDataSource
+spring.shardingsphere.datasource.bill11master.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.shardingsphere.datasource.bill11master.url=jdbc:mysql://192.168.1.98:3306/newsee-bill-11?characterEncoding=utf-8&useSSL=false&nullCatalogMeansCurrent=true
+spring.shardingsphere.datasource.bill11master.username=root
+spring.shardingsphere.datasource.bill11master.password=Newsee888
+spring.shardingsphere.datasource.bill11master.filters=stat,wall,slf4j
+spring.shardingsphere.datasource.bill11master.initialSize=1
+spring.shardingsphere.datasource.bill11master.minIdle=1
+spring.shardingsphere.datasource.bill11master.maxWait=60000
+spring.shardingsphere.datasource.bill11master.maxActive=20
+spring.shardingsphere.datasource.bill11master.timeBetweenEvictionRunsMillis=60000
+spring.shardingsphere.datasource.bill11master.minEvictableIdleTimeMillis=300000
+spring.shardingsphere.datasource.bill11master.validationQuery=select 'x'
+spring.shardingsphere.datasource.bill11master.testWhileIdle=true
+spring.shardingsphere.datasource.bill11master.testOnBorrow=false
+spring.shardingsphere.datasource.bill11master.testOnReturn=false
+spring.shardingsphere.datasource.bill11master.poolPreparedStatements=true
+spring.shardingsphere.datasource.bill11master.maxOpenPreparedStatements=20
+
+# 读写分离 charge
+spring.shardingsphere.sharding.master-slave-rules.charge10.master-data-source-name=charge10master
+spring.shardingsphere.sharding.master-slave-rules.charge10.slave-data-source-names[0]=charge10master
+spring.shardingsphere.sharding.master-slave-rules.charge11.master-data-source-name=charge11master
+spring.shardingsphere.sharding.master-slave-rules.charge11.slave-data-source-names[0]=charge11master
+# 读写分离 bill
+spring.shardingsphere.sharding.master-slave-rules.bill10.master-data-source-name=bill10master
+spring.shardingsphere.sharding.master-slave-rules.bill10.slave-data-source-names[0]=bill10master
+spring.shardingsphere.sharding.master-slave-rules.bill11.master-data-source-name=bill11master
+spring.shardingsphere.sharding.master-slave-rules.bill11.slave-data-source-names[0]=bill11master
+# 读写分离 owner
+spring.shardingsphere.sharding.master-slave-rules.owner10.master-data-source-name=owner10master
+spring.shardingsphere.sharding.master-slave-rules.owner10.slave-data-source-names[0]=owner10master
+
+# 水平分库策略配置
+spring.shardingsphere.sharding.default-database-strategy.hint.algorithm-class-name=com.newsee.database.sharding.NSDbHintShardingAlgorithm
+spring.shardingsphere.sharding.default-table-strategy.hint.algorithm-class-name=com.newsee.database.sharding.NSDbHintShardingAlgorithm
+
+# 广播表，每个节点复制一份，适用于配置类的数据
+# 报表服务只读数据，不配置广播表
+
+# 水平分库范围设置 - charge
+newsee.sharding.shardConfigs[0].rangeGroup=Charge
+newsee.sharding.shardConfigs[0].rangeNum=10
+newsee.sharding.shardConfigs[0].enterpriseIds=974
+#newsee.sharding.shardConfigs[0].precinctIds=1,1411,1852,4085,5576,34248,50960,53376,58141,58145,58148,58153,58166,58172,58250,58285,58533,58821,59448,59666,70509,71230,169151,169182,169213,169223,169263,169365,169388,169677,169772,169899,171535,175580,178399,178684,183827,184213,187298,197683,213421
+newsee.sharding.shardConfigs[0].precinctIdStart=1
+newsee.sharding.shardConfigs[0].precinctIdEnd=401861
+newsee.sharding.shardConfigs[0].datasourceName=charge10
+
+newsee.sharding.shardConfigs[1].rangeGroup=Charge
+newsee.sharding.shardConfigs[1].rangeNum=11
+newsee.sharding.shardConfigs[1].enterpriseIds=974
+#newsee.sharding.shardConfigs[1].precinctIds=244127,244940
+newsee.sharding.shardConfigs[1].precinctIdStart=401886
+newsee.sharding.shardConfigs[1].precinctIdEnd=500000
+newsee.sharding.shardConfigs[1].datasourceName=charge11
+
+# 水平分库范围设置 - bill
+newsee.sharding.shardConfigs[2].rangeGroup=Bill
+newsee.sharding.shardConfigs[2].rangeNum=10
+newsee.sharding.shardConfigs[2].enterpriseIds=974
+#newsee.sharding.shardConfigs[2].precinctIds=1,1411,1852,4085,5576,34248,50960,53376,58141,58145,58148,58153,58166,58172,58250,58285,58533,58821,59448,59666,70509,71230,169151,169182,169213,169223,169263,169365,169388,169677,169772,169899,171535,175580,178399,178684,183827,184213,187298,197683,213421
+newsee.sharding.shardConfigs[2].precinctIdStart=1
+newsee.sharding.shardConfigs[2].precinctIdEnd=401861
+newsee.sharding.shardConfigs[2].datasourceName=bill10
+
+newsee.sharding.shardConfigs[3].rangeGroup=Bill
+newsee.sharding.shardConfigs[3].rangeNum=11
+newsee.sharding.shardConfigs[3].enterpriseIds=974
+#newsee.sharding.shardConfigs[3].precinctIds=244127,244940
+newsee.sharding.shardConfigs[3].precinctIdStart=401886
+newsee.sharding.shardConfigs[3].precinctIdEnd=500000
+newsee.sharding.shardConfigs[3].datasourceName=bill11
+
+# 水平分库范围设置 - owner 不做水平分库
+newsee.sharding.shardConfigs[4].rangeGroup=Owner
+newsee.sharding.shardConfigs[4].rangeNum=10
+newsee.sharding.shardConfigs[4].datasourceName=owner10
+
+# 日志中显示实际SQL和在哪个分片库执行
+spring.shardingsphere.props.sql.show=true
